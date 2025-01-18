@@ -1,0 +1,107 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function App() {
+  const [registrations, setRegistrations] = useState([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    eventName: '',
+    registrationDate: '',
+  });
+  const [editRegistration, setEditRegistration] = useState(null);
+
+  useEffect(() => {
+    axios.get('http://localhost:3002/registrations')
+      .then((res) => setRegistrations(res.data))
+      .catch((err) => console.error('Error fetching registrations:', err));
+  }, []);
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAddRegistration = (e) => {
+    e.preventDefault();
+    axios.post('http://localhost:3002/registrations', formData)
+      .then(() => {
+        setFormData({ name: '', email: '', phone: '', eventName: '', registrationDate: '' });
+        return axios.get('http://localhost:3002/registrations');
+      })
+      .then((res) => setRegistrations(res.data));
+  };
+
+  const handleUpdateRegistration = (e) => {
+    e.preventDefault();
+    axios.put(`http://localhost:3002/registrations/${editRegistration.id}`, formData)
+      .then(() => {
+        setEditRegistration(null);
+        return axios.get('http://localhost:3002/registrations');
+      })
+      .then((res) => setRegistrations(res.data));
+  };
+
+  const handleDeleteRegistration = (id) => {
+    axios.delete(`http://localhost:3002/registrations/${id}`)
+      .then(() => axios.get('http://localhost:3002/registrations').then((res) => setRegistrations(res.data)));
+  };
+
+  return (
+    <div>
+      <h1>Event Registration System</h1>
+
+      <form onSubmit={editRegistration ? handleUpdateRegistration : handleAddRegistration}>
+        <input
+          name="name"
+          placeholder="Name"
+          value={formData.name}
+          onChange={handleInputChange}
+          required
+        />
+        <input
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleInputChange}
+          required
+        />
+        <input
+          name="phone"
+          placeholder="Phone"
+          value={formData.phone}
+          onChange={handleInputChange}
+          required
+        />
+        <input
+          name="eventName"
+          placeholder="Event Name"
+          value={formData.eventName}
+          onChange={handleInputChange}
+          required
+        />
+        <input
+          name="registrationDate"
+          type="date"
+          value={formData.registrationDate}
+          onChange={handleInputChange}
+          required
+        />
+        <button type="submit">{editRegistration ? 'Update' : 'Add'}</button>
+      </form>
+
+      <h2>Registrations</h2>
+      <ul>
+        {registrations.map((reg) => (
+          <li key={reg.id}>
+            {reg.name} - {reg.event_name} ({reg.registration_date})
+            <button onClick={() => setEditRegistration(reg)}>Edit</button>
+            <button onClick={() => handleDeleteRegistration(reg.id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default App;
